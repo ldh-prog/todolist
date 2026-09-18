@@ -1,36 +1,131 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TodoList (`kr.ulsan.ldh.todolist`)
 
-## Getting Started
+Next.js App Router + Supabase Auth/PostgreSQL/RLS + Vercel 배포용 할 일 목록 앱입니다.
 
-First, run the development server:
+로그인한 사용자만 자신의 `todos` 행을 조회·추가·수정·삭제할 수 있습니다.
+
+## 앱을 켜기 전에 할 일 (필수)
+
+anon 키만으로는 테이블을 만들 수 없습니다. Supabase Dashboard에서 아래 두 가지를 먼저 적용하세요.
+
+1. **SQL Editor**에서 `supabase/schema.sql` 전체를 실행합니다.
+2. **Authentication > Providers > Email**에서 로컬 테스트가 쉽도록 Confirm email을 끄거나, 켠 채로 인증 메일을 사용합니다.
+3. **Authentication > URL Configuration**
+   - Site URL: `http://localhost:3000`
+   - Redirect URLs: `http://localhost:3000/auth/callback`
+
+
+## 기술 스택
+
+- Frontend: Next.js 16 (App Router), React 19, Tailwind CSS 4, Lucide Icons
+- Backend/DB: Supabase (PostgreSQL, Authentication, Row Level Security)
+- Deployment: Vercel
+- Design: ui-ux-pro-max (Flat Design, teal `#0D9488` + CTA orange `#F97316`, Plus Jakarta Sans)
+
+## 1. 프로젝트 초기화 및 패키지 설치
+
+이미 이 저장소에 구성이 들어 있다면 의존성만 설치하면 됩니다.
+
+```bash
+npm install
+```
+
+처음부터 다시 만들 때의 기준 명령은 다음과 같습니다.
+
+```bash
+npx create-next-app@latest kr-ulsan-ldh-todolist --typescript --tailwind --eslint --app --src-dir --import-alias "@/*" --use-npm --turbopack --yes
+cd kr-ulsan-ldh-todolist
+npm install @supabase/supabase-js @supabase/ssr lucide-react
+npm install -D vitest
+```
+
+## 2. 환경 변수와 Supabase SSR 클라이언트
+
+`.env.example`을 복사해 `.env.local`을 만듭니다.
+
+```bash
+cp .env.example .env.local
+```
+
+```bash
+# .env.local
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+관련 파일:
+
+- `src/lib/supabase/client.ts` — 브라우저 클라이언트
+- `src/lib/supabase/server.ts` — Server Component / Server Action 클라이언트
+- `src/lib/supabase/proxy.ts` — 세션 갱신
+- `src/proxy.ts` — Next.js 16 인증 게이트 (구 `middleware.ts`)
+
+## 3. 데이터베이스와 RLS
+
+1. [Supabase Dashboard](https://supabase.com/dashboard) > SQL Editor
+2. `supabase/schema.sql` 전체 실행
+3. Authentication > Providers에서 Email이 켜져 있는지 확인
+4. 로컬 개발이 편하도록 Authentication > Providers > Email에서 **Confirm email**을 끄거나, 켠 채로 인증 메일을 사용
+
+로컬 Site URL / Redirect URL:
+
+- Site URL: `http://localhost:3000`
+- Redirect URLs: `http://localhost:3000/auth/callback`
+
+## 4. 로컬 실행
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+브라우저에서 [http://localhost:3000](http://localhost:3000) 을 엽니다. 비로그인 사용자는 `/login`으로 이동합니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm test
+npm run lint
+npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 5. Vercel 배포
 
-## Learn More
+1. GitHub에 푸시한 뒤 [Vercel](https://vercel.com)에서 Import
+2. Framework Preset: Next.js
+3. Environment Variables에 아래 3개를 Production / Preview / Development 모두 등록
 
-To learn more about Next.js, take a look at the following resources:
+```text
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+NEXT_PUBLIC_SITE_URL
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`NEXT_PUBLIC_SITE_URL`은 배포 도메인으로 둡니다. 예: `https://your-app.vercel.app`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+4. Supabase Authentication > URL Configuration
 
-## Deploy on Vercel
+- Site URL: Vercel 도메인
+- Redirect URLs: `https://your-app.vercel.app/auth/callback`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+5. 배포 후 회원가입 → 할 일 추가/수정/삭제/필터가 동작하는지 확인
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 주요 경로
+
+| 경로 | 역할 |
+|------|------|
+| `/login` | 이메일/비밀번호 로그인 |
+| `/signup` | 회원가입 |
+| `/` | 할 일 목록 (서버 페칭 + 클라이언트 상태) |
+| `/auth/callback` | 이메일 인증 코드 교환 |
+
+## 보안 메모
+
+- `anon` 키는 브라우저에 노출되는 공개 키입니다. 실제 보호는 **RLS**가 담당합니다.
+- `user_id`는 클라이언트가 아니라 서버 세션의 `auth.uid()`로 기록합니다.
+- Service Role Key는 프론트엔드와 `.env.local`의 `NEXT_PUBLIC_*`에 넣지 마세요.
+
+## 문서
+
+- [docs/CHANGELOG.md](docs/CHANGELOG.md)
+- [docs/notes/todolist-implementation.md](docs/notes/todolist-implementation.md)
+- [design-system/ldh-todolist/MASTER.md](design-system/ldh-todolist/MASTER.md)
+
