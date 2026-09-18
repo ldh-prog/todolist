@@ -1,4 +1,7 @@
 // src/lib/env.ts
+import { headers } from "next/headers";
+import { resolveSiteUrl } from "@/lib/site-url";
+
 function requiredPublicEnv(name: string): string {
   const value = process.env[name];
 
@@ -18,6 +21,20 @@ export function getSupabasePublicEnv() {
   };
 }
 
-export function getSiteUrl() {
-  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+export async function getSiteUrl() {
+  try {
+    const headerList = await headers();
+    return resolveSiteUrl({
+      origin: headerList.get("origin"),
+      host: headerList.get("x-forwarded-host") ?? headerList.get("host"),
+      proto: headerList.get("x-forwarded-proto"),
+      explicit: process.env.NEXT_PUBLIC_SITE_URL,
+      vercelUrl: process.env.VERCEL_URL,
+    });
+  } catch {
+    return resolveSiteUrl({
+      explicit: process.env.NEXT_PUBLIC_SITE_URL,
+      vercelUrl: process.env.VERCEL_URL,
+    });
+  }
 }

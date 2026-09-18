@@ -89,24 +89,40 @@ npm run build
 
 ## 5. Vercel 배포
 
-1. GitHub에 푸시한 뒤 [Vercel](https://vercel.com)에서 Import
-2. Framework Preset: Next.js
-3. Environment Variables에 아래 3개를 Production / Preview / Development 모두 등록
+프로덕션 도메인: [https://todolist-coral-rho-45.vercel.app](https://todolist-coral-rho-45.vercel.app)
 
-```text
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
-NEXT_PUBLIC_SITE_URL
-```
+### 환경 변수
 
-`NEXT_PUBLIC_SITE_URL`은 배포 도메인으로 둡니다. 예: `https://your-app.vercel.app`
+Vercel 프로젝트 **Settings → Environment Variables**에 아래 3개를 Production / Preview / Development 모두에 저장합니다.
 
-4. Supabase Authentication > URL Configuration
+| Name | Value |
+|------|--------|
+| `NEXT_PUBLIC_SUPABASE_URL` | `.env.local`과 동일한 Supabase URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `.env.local`과 동일한 anon key |
+| `NEXT_PUBLIC_SITE_URL` | `https://todolist-coral-rho-45.vercel.app` |
 
-- Site URL: Vercel 도메인
-- Redirect URLs: `https://your-app.vercel.app/auth/callback`
+저장 후 **Deployments → 최신 배포 → Redeploy** 하거나, GitHub `main`에 새 커밋이 있으면 자동 배포됩니다.
 
-5. 배포 후 회원가입 → 할 일 추가/수정/삭제/필터가 동작하는지 확인
+`NEXT_PUBLIC_*`는 빌드 타임에 주입됩니다. 변수를 나중에 넣었다면 반드시 다시 배포해야 합니다.
+
+### Git 연결
+
+대시보드에 `No Production Deployment`가 보이면 GitHub 저장소 `ldh-prog/todolist`가 아직 연결되지 않았거나 첫 배포가 실패한 상태입니다.
+
+1. Vercel 프로젝트 → Settings → Git → Connect Git Repository
+2. `ldh-prog/todolist` 선택
+3. Production Branch: `main`
+4. Deploy
+
+### Supabase URL
+
+Authentication → URL Configuration:
+
+- Site URL: `https://todolist-coral-rho-45.vercel.app`
+- Redirect URLs:
+  - `http://localhost:3000/auth/callback`
+  - `https://todolist-coral-rho-45.vercel.app/auth/callback`
+
 
 ## 주요 경로
 
@@ -127,5 +143,6 @@ NEXT_PUBLIC_SITE_URL
 
 - [docs/CHANGELOG.md](docs/CHANGELOG.md)
 - [docs/notes/todolist-implementation.md](docs/notes/todolist-implementation.md)
+- [docs/notes/vercel-deploy.md](docs/notes/vercel-deploy.md)
 - [design-system/ldh-todolist/MASTER.md](design-system/ldh-todolist/MASTER.md)
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1 - 2026-09-18
+
+### Changed
+
+- Vercel 프로덕션 도메인 `todolist-coral-rho-45.vercel.app` 기준으로 배포 가이드를 구체화
+- 인증 메일 리다이렉트가 요청 Origin / Vercel URL을 따라가도록 사이트 URL 해석을 보강
+
 ## 0.1.0 - 2026-09-18
 
 ### Added

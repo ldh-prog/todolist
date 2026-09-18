@@ -69,7 +69,7 @@ export async function signUpAction(
     email: emailResult.email,
     password: passwordResult.password,
     options: {
-      emailRedirectTo: `${getSiteUrl()}/auth/callback`,
+      emailRedirectTo: `${await getSiteUrl()}/auth/callback`,
     },
   });
 
