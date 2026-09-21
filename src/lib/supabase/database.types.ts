@@ -34,6 +34,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      shopping_items: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          quantity: number;
+          category: string;
+          is_purchased: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          quantity?: number;
+          category?: string;
+          is_purchased?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          quantity?: number;
+          category?: string;
+          is_purchased?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -51,3 +81,5 @@ export type Database = {
 };
 
 export type TodoRow = Database["public"]["Tables"]["todos"]["Row"];
+export type ShoppingItemRow =
+  Database["public"]["Tables"]["shopping_items"]["Row"];

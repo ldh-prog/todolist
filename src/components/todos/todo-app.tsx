@@ -1,7 +1,7 @@
 // src/components/todos/todo-app.tsx
 "use client";
 
-import { LogOut, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import {
   createTodoAction,
@@ -9,9 +9,9 @@ import {
   toggleTodoAction,
   updateTodoTitleAction,
 } from "@/actions/todos";
-import { signOutAction } from "@/actions/auth";
-import { AppLogo } from "@/components/brand/app-logo";
+import { AppHeader } from "@/components/layout/app-header";
 import { Alert } from "@/components/ui/alert";
+import { StatCard } from "@/components/ui/stat-card";
 import { TodoEmpty } from "@/components/todos/todo-empty";
 import { TodoFilters } from "@/components/todos/todo-filters";
 import { TodoItem } from "@/components/todos/todo-item";
@@ -138,25 +138,7 @@ export function TodoApp({ initialTodos, userEmail }: TodoAppProps) {
 
   return (
     <div className="min-h-full bg-background">
-      <header className="sticky top-4 z-20 mx-4 rounded-2xl border border-border bg-surface/90 px-4 py-3 backdrop-blur-sm sm:mx-auto sm:max-w-2xl">
-        <div className="flex items-center justify-between gap-3">
-          <AppLogo />
-          <div className="flex min-w-0 items-center gap-3">
-            <p className="hidden truncate text-sm text-muted sm:block">
-              {userEmail}
-            </p>
-            <form action={signOutAction}>
-              <button
-                type="submit"
-                className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-muted transition-colors duration-200 hover:bg-background hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
-              >
-                <LogOut className="h-4 w-4" aria-hidden="true" />
-                로그아웃
-              </button>
-            </form>
-          </div>
-        </div>
-      </header>
+      <AppHeader userEmail={userEmail} current="todos" />
 
       <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 pt-8 pb-16">
         <section className="flex flex-col gap-2">
@@ -220,15 +202,6 @@ export function TodoApp({ initialTodos, userEmail }: TodoAppProps) {
           </ul>
         )}
       </main>
-    </div>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-xl border border-border bg-surface px-4 py-3">
-      <p className="text-sm text-muted">{label}</p>
-      <p className="text-2xl font-semibold tracking-tight">{value}</p>
     </div>
   );
 }

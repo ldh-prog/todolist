@@ -30,7 +30,14 @@ export function mapAuthError(message: string): string {
     return "비밀번호는 6자 이상이어야 합니다.";
   }
 
-  if (normalized.includes("rate limit") || normalized.includes("over_email_send_rate_limit")) {
+  if (
+    normalized.includes("over_email_send_rate_limit") ||
+    normalized.includes("email rate limit")
+  ) {
+    return "인증 메일 발송 한도에 걸렸습니다. 약 1시간 뒤 다시 시도하거나, Supabase Authentication에서 Confirm email을 끄고 테스트하세요.";
+  }
+
+  if (normalized.includes("rate limit")) {
     return "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.";
   }
 

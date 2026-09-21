@@ -27,6 +27,9 @@ export default async function HomePage() {
         <SetupRequired
           userEmail={user.email ?? ""}
           message={error.message}
+          current="todos"
+          tableName="todos"
+          sqlFile="supabase/schema.sql"
         />
       );
     }

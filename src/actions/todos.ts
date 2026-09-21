@@ -2,27 +2,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/auth/session";
 import { validateTodoTitle } from "@/lib/todos/title";
 import type { Todo } from "@/lib/todos/types";
 
 type ActionError = { error: string };
 type TodoResult = { todo: Todo } | ActionError;
 type EmptyResult = { ok: true } | ActionError;
-
-async function requireUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    return { supabase, user: null, error: "로그인이 필요합니다." };
-  }
-
-  return { supabase, user, error: null };
-}
 
 export async function createTodoAction(title: string): Promise<TodoResult> {
   const titleResult = validateTodoTitle(title);
