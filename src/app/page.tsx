@@ -2,8 +2,12 @@
 import { redirect } from "next/navigation";
 import { SetupRequired } from "@/components/todos/setup-required";
 import { TodoApp } from "@/components/todos/todo-app";
+import { TODO_SELECT_COLUMNS } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/server";
-import { isMissingTodosTableError } from "@/lib/todos/schema-error";
+import {
+  isMissingTodoReminderColumnError,
+  isMissingTodosTableError,
+} from "@/lib/todos/schema-error";
 import type { Todo } from "@/lib/todos/types";
 
 export default async function HomePage() {
@@ -18,7 +22,7 @@ export default async function HomePage() {
 
   const { data, error } = await supabase
     .from("todos")
-    .select("id, user_id, title, is_completed, created_at")
+    .select(TODO_SELECT_COLUMNS)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -30,6 +34,18 @@ export default async function HomePage() {
           current="todos"
           tableName="todos"
           sqlFile="supabase/schema.sql"
+        />
+      );
+    }
+
+    if (isMissingTodoReminderColumnError(error.message)) {
+      return (
+        <SetupRequired
+          userEmail={user.email ?? ""}
+          message={error.message}
+          current="todos"
+          tableName="todos 알림 컬럼"
+          sqlFile="supabase/todo_reminders.sql"
         />
       );
     }

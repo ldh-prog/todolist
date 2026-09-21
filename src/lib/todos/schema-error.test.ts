@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isMissingShoppingTableError,
+  isMissingTodoReminderColumnError,
   isMissingTodosTableError,
 } from "@/lib/todos/schema-error";
 
@@ -30,6 +31,16 @@ describe("isMissingShoppingTableError", () => {
     expect(
       isMissingShoppingTableError(
         "Could not find the table 'public.shopping_items' in the schema cache",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("isMissingTodoReminderColumnError", () => {
+  it("알림 컬럼 없음 메시지를 감지한다", () => {
+    expect(
+      isMissingTodoReminderColumnError(
+        "Could not find the 'due_at' column of 'todos' in the schema cache",
       ),
     ).toBe(true);
   });

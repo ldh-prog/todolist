@@ -9,4 +9,5 @@ export type TodoCounts = {
   all: number;
   active: number;
   completed: number;
+  overdue: number;
 };

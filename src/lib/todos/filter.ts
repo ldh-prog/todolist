@@ -1,5 +1,6 @@
 // src/lib/todos/filter.ts
 import type { Todo, TodoCounts, TodoFilter } from "@/lib/todos/types";
+import { isTodoOverdue } from "@/lib/todos/schedule";
 
 export function filterTodos(todos: Todo[], filter: TodoFilter): Todo[] {
   switch (filter) {
@@ -21,11 +22,14 @@ export function countTodos(todos: Todo[]): TodoCounts {
         counts.completed += 1;
       } else {
         counts.active += 1;
+        if (isTodoOverdue(todo)) {
+          counts.overdue += 1;
+        }
       }
 
       return counts;
     },
-    { all: 0, active: 0, completed: 0 },
+    { all: 0, active: 0, completed: 0, overdue: 0 },
   );
 }
 

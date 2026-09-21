@@ -1,13 +1,13 @@
 // src/components/todos/todo-app.tsx
 "use client";
 
-import { Plus } from "lucide-react";
+import { Bell, Plus } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 import {
   createTodoAction,
   deleteTodoAction,
   toggleTodoAction,
-  updateTodoTitleAction,
+  updateTodoAction,
 } from "@/actions/todos";
 import { AppHeader } from "@/components/layout/app-header";
 import { Alert } from "@/components/ui/alert";
@@ -15,8 +15,15 @@ import { StatCard } from "@/components/ui/stat-card";
 import { TodoEmpty } from "@/components/todos/todo-empty";
 import { TodoFilters } from "@/components/todos/todo-filters";
 import { TodoItem } from "@/components/todos/todo-item";
+import { useTodoReminders } from "@/components/todos/use-todo-reminders";
 import { TODO_TITLE_MAX_LENGTH } from "@/lib/constants";
 import { countTodos, filterTodos } from "@/lib/todos/filter";
+import {
+  hoursFromNowIso,
+  parseOptionalDateTime,
+  toDatetimeLocalValue,
+  validateTodoSchedule,
+} from "@/lib/todos/schedule";
 import { validateTodoTitle } from "@/lib/todos/title";
 import type { Todo, TodoFilter } from "@/lib/todos/types";
 
@@ -27,12 +34,17 @@ type TodoAppProps = {
 
 export function TodoApp({ initialTodos, userEmail }: TodoAppProps) {
   const titleId = useId();
+  const dueId = useId();
+  const remindId = useId();
   const [todos, setTodos] = useState(() => initialTodos);
   const [filter, setFilter] = useState<TodoFilter>("all");
   const [draft, setDraft] = useState("");
+  const [dueAt, setDueAt] = useState("");
+  const [remindAt, setRemindAt] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [creating, setCreating] = useState(false);
+  const reminders = useTodoReminders(todos);
 
   const counts = useMemo(() => countTodos(todos), [todos]);
   const visibleTodos = useMemo(
@@ -52,6 +64,18 @@ export function TodoApp({ initialTodos, userEmail }: TodoAppProps) {
     });
   }
 
+  function parseSchedule(dueValue: string, remindValue: string) {
+    const dueResult = parseOptionalDateTime(dueValue);
+    if (!dueResult.ok) {
+      return dueResult;
+    }
+    const remindResult = parseOptionalDateTime(remindValue);
+    if (!remindResult.ok) {
+      return remindResult;
+    }
+    return validateTodoSchedule(dueResult.value, remindResult.value);
+  }
+
   async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const titleResult = validateTodoTitle(draft);
@@ -60,9 +84,18 @@ export function TodoApp({ initialTodos, userEmail }: TodoAppProps) {
       return;
     }
 
+    const scheduleResult = parseSchedule(dueAt, remindAt);
+    if (!scheduleResult.ok) {
+      setError(scheduleResult.error);
+      return;
+    }
+
     setCreating(true);
     setError(null);
-    const result = await createTodoAction(titleResult.title);
+    const result = await createTodoAction(titleResult.title, {
+      dueAt: scheduleResult.dueAt,
+      remindAt: scheduleResult.remindAt,
+    });
     setCreating(false);
 
     if ("error" in result) {
@@ -72,6 +105,8 @@ export function TodoApp({ initialTodos, userEmail }: TodoAppProps) {
 
     setTodos((current) => [result.todo, ...current]);
     setDraft("");
+    setDueAt("");
+    setRemindAt("");
   }
 
   async function handleToggle(todo: Todo) {
@@ -113,15 +148,28 @@ export function TodoApp({ initialTodos, userEmail }: TodoAppProps) {
     }
   }
 
-  async function handleSaveTitle(todo: Todo, title: string): Promise<boolean> {
-    const titleResult = validateTodoTitle(title);
+  async function handleSave(
+    todo: Todo,
+    next: { title: string; dueAt: string; remindAt: string },
+  ): Promise<boolean> {
+    const titleResult = validateTodoTitle(next.title);
     if (!titleResult.ok) {
       setError(titleResult.error);
       return false;
     }
 
+    const scheduleResult = parseSchedule(next.dueAt, next.remindAt);
+    if (!scheduleResult.ok) {
+      setError(scheduleResult.error);
+      return false;
+    }
+
     markBusy(todo.id, true);
-    const result = await updateTodoTitleAction(todo.id, titleResult.title);
+    const result = await updateTodoAction(todo.id, {
+      title: titleResult.title,
+      dueAt: scheduleResult.dueAt,
+      remindAt: scheduleResult.remindAt,
+    });
     markBusy(todo.id, false);
 
     if ("error" in result) {
@@ -144,41 +192,138 @@ export function TodoApp({ initialTodos, userEmail }: TodoAppProps) {
         <section className="flex flex-col gap-2">
           <h1 className="text-3xl font-semibold tracking-tight">오늘의 할 일</h1>
           <p className="text-muted">
-            추가하고, 고치고, 체크하면 됩니다. 목록은 로그인한 계정에만 보입니다.
+            기한과 알림을 넣으면, 이 앱이 열려 있는 동안 알려 드립니다.
           </p>
         </section>
 
-        <section className="grid grid-cols-3 gap-3">
+        {reminders.activeReminder && (
+          <div
+            role="alert"
+            className="flex items-start justify-between gap-3 rounded-xl border border-cta/30 bg-cta/10 px-4 py-3"
+          >
+            <div className="flex items-start gap-2">
+              <Bell className="mt-0.5 h-5 w-5 text-cta" aria-hidden="true" />
+              <div>
+                <p className="font-medium text-foreground">알림</p>
+                <p className="text-sm break-keep text-muted">
+                  {reminders.activeReminder.title}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={reminders.dismissReminder}
+              className="cursor-pointer rounded-lg px-2 py-1 text-sm font-medium text-muted transition-colors duration-200 hover:text-foreground focus-visible:ring-2 focus-visible:ring-cta focus-visible:outline-none"
+            >
+              닫기
+            </button>
+          </div>
+        )}
+
+        {reminders.permission === "default" && (
+          <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted">
+              브라우저 알림을 허용하면 설정한 시각에 시스템 알림이 뜹니다. 앱이
+              열려 있어야 합니다.
+            </p>
+            <button
+              type="button"
+              onClick={() => void reminders.enableNotifications()}
+              className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-background focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+            >
+              <Bell className="h-4 w-4" aria-hidden="true" />
+              알림 허용
+            </button>
+          </div>
+        )}
+
+        {reminders.permission === "denied" && (
+          <Alert tone="error">
+            브라우저에서 알림이 차단되어 있습니다. 사이트 설정에서 허용하면 시스템
+            알림을 받을 수 있습니다.
+          </Alert>
+        )}
+
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatCard label="전체" value={counts.all} />
           <StatCard label="진행 중" value={counts.active} />
           <StatCard label="완료" value={counts.completed} />
+          <StatCard label="기한 지남" value={counts.overdue} />
         </section>
 
         <form
           onSubmit={handleCreate}
-          className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 sm:flex-row"
+          className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4"
         >
-          <div className="min-w-0 flex-1">
-            <label htmlFor={titleId} className="sr-only">
-              새 할 일
-            </label>
-            <input
-              id={titleId}
-              value={draft}
-              maxLength={TODO_TITLE_MAX_LENGTH}
-              onChange={(event) => setDraft(event.target.value)}
-              placeholder="예: 주간 회고 작성하기"
-              className="w-full rounded-lg border border-border bg-surface px-4 py-3 text-base text-foreground transition-colors duration-200 placeholder:text-muted/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-            />
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="min-w-0 flex-1">
+              <label htmlFor={titleId} className="sr-only">
+                새 할 일
+              </label>
+              <input
+                id={titleId}
+                value={draft}
+                maxLength={TODO_TITLE_MAX_LENGTH}
+                onChange={(event) => setDraft(event.target.value)}
+                placeholder="예: 주간 회고 작성하기"
+                className="w-full rounded-lg border border-border bg-surface px-4 py-3 text-base text-foreground transition-colors duration-200 placeholder:text-muted/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={creating}
+              className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-cta px-4 py-3 font-semibold text-white transition-colors duration-200 hover:bg-cta-hover focus-visible:ring-2 focus-visible:ring-cta focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              <Plus className="h-5 w-5" aria-hidden="true" />
+              추가
+            </button>
           </div>
-          <button
-            type="submit"
-            disabled={creating}
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-cta px-4 py-3 font-semibold text-white transition-colors duration-200 hover:bg-cta-hover focus-visible:ring-2 focus-visible:ring-cta focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            <Plus className="h-5 w-5" aria-hidden="true" />
-            추가
-          </button>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-1">
+              <label htmlFor={dueId} className="text-sm font-medium text-foreground">
+                기한
+              </label>
+              <input
+                id={dueId}
+                type="datetime-local"
+                value={dueAt}
+                onChange={(event) => setDueAt(event.target.value)}
+                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label htmlFor={remindId} className="text-sm font-medium text-foreground">
+                알림
+              </label>
+              <input
+                id={remindId}
+                type="datetime-local"
+                value={remindAt}
+                onChange={(event) => setRemindAt(event.target.value)}
+                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setRemindAt(toDatetimeLocalValue(hoursFromNowIso(1)))
+                  }
+                  className="cursor-pointer rounded-md px-2 py-1 text-xs font-medium text-primary transition-colors duration-200 hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                >
+                  1시간 뒤
+                </button>
+                {dueAt && (
+                  <button
+                    type="button"
+                    onClick={() => setRemindAt(dueAt)}
+                    className="cursor-pointer rounded-md px-2 py-1 text-xs font-medium text-primary transition-colors duration-200 hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+                  >
+                    기한과 같게
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         </form>
 
         {error && <Alert tone="error">{error}</Alert>}
@@ -196,7 +341,7 @@ export function TodoApp({ initialTodos, userEmail }: TodoAppProps) {
                 busy={busyIds.has(todo.id)}
                 onToggle={handleToggle}
                 onDelete={handleDelete}
-                onSaveTitle={handleSaveTitle}
+                onSave={handleSave}
               />
             ))}
           </ul>

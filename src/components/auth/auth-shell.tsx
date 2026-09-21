@@ -5,7 +5,7 @@ import { AppLogo } from "@/components/brand/app-logo";
 
 const BENEFITS = [
   "내 할 일만 보이는 개인 공간",
-  "완료 여부를 바로 체크",
+  "기한과 알림으로 놓치지 않기",
   "진행 중 / 완료 필터",
 ];
 

@@ -8,7 +8,7 @@ Next.js App Router + Supabase Auth/PostgreSQL/RLS + Vercel 배포용 할 일 목
 
 anon 키만으로는 테이블을 만들 수 없습니다. Supabase Dashboard에서 아래 두 가지를 먼저 적용하세요.
 
-1. **SQL Editor**에서 `supabase/schema.sql` 전체를 실행합니다. 이미 todos만 만들어 둔 경우 `supabase/shopping_items.sql`만 실행해도 됩니다.
+1. **SQL Editor**에서 `supabase/schema.sql` 전체를 실행합니다. 이미 예전 todos만 있다면 `supabase/todo_reminders.sql`과 `supabase/shopping_items.sql`을 이어서 실행하세요.
 2. **Authentication > Providers > Email**에서 로컬 테스트가 쉽도록 Confirm email을 끄거나, 켠 채로 인증 메일을 사용합니다.
 3. **Authentication > URL Configuration**
    - Site URL: `http://localhost:3000`
@@ -64,7 +64,7 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ## 3. 데이터베이스와 RLS
 
 1. [Supabase Dashboard](https://supabase.com/dashboard) > SQL Editor
-2. `supabase/schema.sql` 전체 실행. 이미 todos만 있다면 `supabase/shopping_items.sql`만 실행
+2. `supabase/schema.sql` 전체 실행. 이미 예전 todos만 있다면 `supabase/todo_reminders.sql`과 `supabase/shopping_items.sql`을 실행
 3. Authentication > Providers에서 Email이 켜져 있는지 확인
 4. 로컬 개발이 편하도록 Authentication > Providers > Email에서 **Confirm email**을 끄거나, 켠 채로 인증 메일을 사용
 
@@ -80,6 +80,8 @@ npm run dev
 ```
 
 브라우저에서 [http://localhost:3000](http://localhost:3000) 을 엽니다. 비로그인 사용자는 `/login`으로 이동합니다.
+
+할 일에 기한과 알림 시각을 넣으면, **앱이 열려 있는 동안** 인앱 배너와(권한을 허용한 경우) 브라우저 알림으로 알려 줍니다. 브라우저를 완전히 종료하면 울리지 않습니다. 기존 `todos` 테이블에는 `supabase/todo_reminders.sql`을 실행해야 컬럼이 생깁니다.
 
 ```bash
 npm test
@@ -130,7 +132,7 @@ Authentication → URL Configuration:
 |------|------|
 | `/login` | 이메일/비밀번호 로그인 |
 | `/signup` | 회원가입 |
-| `/` | 할 일 목록 (서버 페칭 + 클라이언트 상태) |
+| `/` | 할 일 목록 (기한/알림, 서버 페칭 + 클라이언트 상태) |
 | `/shopping` | 장보기 목록 (수량, 분류, 담음 체크) |
 | `/auth/callback` | 이메일 인증 코드 교환 |
 
@@ -144,6 +146,7 @@ Authentication → URL Configuration:
 
 - [docs/CHANGELOG.md](docs/CHANGELOG.md)
 - [docs/notes/shopping.md](docs/notes/shopping.md)
+- [docs/notes/todo-reminders.md](docs/notes/todo-reminders.md)
 - [docs/notes/todolist-implementation.md](docs/notes/todolist-implementation.md)
 - [docs/notes/vercel-deploy.md](docs/notes/vercel-deploy.md)
 - [design-system/ldh-todolist/MASTER.md](design-system/ldh-todolist/MASTER.md)

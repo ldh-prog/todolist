@@ -7,6 +7,9 @@ function todo(partial: Partial<Todo> & Pick<Todo, "id" | "title" | "is_completed
   return {
     user_id: "user-1",
     created_at: "2026-09-18T00:00:00.000Z",
+    due_at: null,
+    remind_at: null,
+    reminder_fired_at: null,
     ...partial,
   };
 }
@@ -33,11 +36,45 @@ describe("filterTodos", () => {
 
 describe("countTodos", () => {
   it("전체/진행/완료 개수를 계산한다", () => {
-    expect(countTodos(sample)).toEqual({ all: 3, active: 2, completed: 1 });
+    expect(countTodos(sample)).toEqual({
+      all: 3,
+      active: 2,
+      completed: 1,
+      overdue: 0,
+    });
   });
 
   it("빈 목록은 모두 0이다", () => {
-    expect(countTodos([])).toEqual({ all: 0, active: 0, completed: 0 });
+    expect(countTodos([])).toEqual({
+      all: 0,
+      active: 0,
+      completed: 0,
+      overdue: 0,
+    });
+  });
+
+  it("완료되지 않고 기한이 지난 항목만 overdue로 센다", () => {
+    expect(
+      countTodos([
+        todo({
+          id: "overdue",
+          title: "지난 기한",
+          is_completed: false,
+          due_at: "2000-01-01T00:00:00.000Z",
+        }),
+        todo({
+          id: "done-overdue",
+          title: "완료된 지난 기한",
+          is_completed: true,
+          due_at: "2000-01-01T00:00:00.000Z",
+        }),
+      ]),
+    ).toEqual({
+      all: 2,
+      active: 1,
+      completed: 1,
+      overdue: 1,
+    });
   });
 });
 

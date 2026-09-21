@@ -26,7 +26,7 @@ export function SetupRequired({
             <DatabaseZap className="h-6 w-6" aria-hidden="true" />
           </span>
           <h1 className="text-2xl font-semibold tracking-tight">
-            {tableName} 테이블이 아직 없습니다
+            {tableName}이 아직 준비되지 않았습니다
           </h1>
           <p className="text-muted">
             Supabase SQL Editor에서{" "}

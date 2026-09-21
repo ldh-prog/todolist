@@ -9,13 +9,29 @@ create table if not exists public.todos (
   user_id uuid not null references auth.users (id) on delete cascade,
   title text not null,
   is_completed boolean not null default false,
+  due_at timestamptz,
+  remind_at timestamptz,
+  reminder_fired_at timestamptz,
   created_at timestamptz not null default timezone('utc', now()),
   constraint todos_title_not_empty check (char_length(btrim(title)) > 0),
   constraint todos_title_max_length check (char_length(title) <= 200)
 );
 
+alter table public.todos
+  add column if not exists due_at timestamptz,
+  add column if not exists remind_at timestamptz,
+  add column if not exists reminder_fired_at timestamptz;
+
 create index if not exists todos_user_id_created_at_idx
   on public.todos (user_id, created_at desc);
+
+create index if not exists todos_user_id_remind_at_idx
+  on public.todos (user_id, remind_at)
+  where remind_at is not null;
+
+create index if not exists todos_user_id_due_at_idx
+  on public.todos (user_id, due_at)
+  where due_at is not null;
 
 alter table public.todos enable row level security;
 
